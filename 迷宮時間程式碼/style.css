@@ -1,0 +1,103 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    touch-action: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #2c3e50;  /* 深色背景 */
+    font-family: '微軟正黑體', sans-serif;
+}
+
+.game-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;  /* 或您想要的最大寬度 */
+    margin: 20px;
+}
+
+canvas {
+    background: #f0f0f0;
+    display: block;
+    touch-action: none;
+    width: 100%;
+    border: 2px solid #34495e;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+#instructions {
+    position: fixed;
+    left: 20px;
+    top: 20px;
+    width: 250px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #34495e;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+#instructions h3 {
+    margin: 0 0 10px;
+    font-size: 16px;
+    color: #34495e;
+}
+
+#instructions p {
+    margin: 0 0 10px;
+    line-height: 1.5;
+}
+
+.game-info {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.controls {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #3498db;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+/* 響應式設計 */
+@media (max-width: 600px) {
+    .game-container {
+        margin: 10px;
+    }
+
+    #instructions {
+        width: 200px;
+        font-size: 12px;
+    }
+
+    .game-info {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+}
