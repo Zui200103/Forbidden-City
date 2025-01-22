@@ -48,6 +48,11 @@
         }
     </style>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- 添加 React 相關腳本 -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 </head>
 <body>
     <div class="game-container">
@@ -61,9 +66,16 @@
             
             <h3>手機版：</h3>
             <p>用手指操控紅色圓圈移動</p>
+
+            <h3>手機版：</h3>
+            <p>使用左下角虛擬搖桿控制紅色圓圈移動</p>
         </div>
         <canvas id="gameCanvas"></canvas>
+        <div id="joystick-container"></div>
+       
     </div>
+    <!-- 先加載搖桿組件，再加載遊戲邏輯 -->
+    <script type="text/babel" src="joystick.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
