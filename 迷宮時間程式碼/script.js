@@ -1388,124 +1388,70 @@ class MazeGame {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    // 修改處理觸控開始的方法
-handleTouchStart(touch) {
-    const rect = this.canvas.getBoundingClientRect();
-    const canvasScaleX = this.canvas.width / rect.width;
-    const canvasScaleY = this.canvas.height / rect.height;
+    handleTouchStart(touch) {
+        const rect = this.canvas.getBoundingClientRect();
+        const canvasScaleX = this.canvas.width / rect.width;
+        const canvasScaleY = this.canvas.height / rect.height;
+        
+        const touchX = (touch.clientX - rect.left) * canvasScaleX;
+        const touchY = (touch.clientY - rect.top) * canvasScaleY;
     
-    const touchX = (touch.clientX - rect.left) * canvasScaleX;
-    const touchY = (touch.clientY - rect.top) * canvasScaleY;
-    this.lastValidTouchX = touchX;
-    this.lastValidTouchY = touchY;
-
-    // 檢查是否點擊到目標 - 在觸控模式下使用更大的判定範圍
-    const touchTargetRadius = this.target.radius * this.zoomFactor * 4; // 將判定範圍擴大為原來的4倍
-    const dist = Math.sqrt(
-        (touchX - this.target.x) ** 2 + 
-        (touchY - this.target.y) ** 2
-    );
-
-    const currentTime = Date.now();
-    if (dist < touchTargetRadius && 
-        currentTime - this.lastFollowingStopTime >= this.followingCooldown) {
-        this.target.following = true;
-        this.target.color = 'blue';
-        this.target.trail = [{ x: this.target.x, y: this.target.y }];
-    }
-}
-
-handleTouchMove(touch) {
-    const rect = this.canvas.getBoundingClientRect();
-    const canvasScaleX = this.canvas.width / rect.width;
-    const canvasScaleY = this.canvas.height / rect.height;
+        // 檢查建築物點擊
+        [this.locations1, this.locations2, this.locations3, this.locations4, this.locations5].forEach(locations => {
+            locations.forEach(loc => {
+                const scaledX = loc.x * this.zoomFactor + this.offsetX;
+                const scaledY = loc.y * this.zoomFactor + this.offsetY;
+                const scaledWidth = loc.width * this.zoomFactor;
+                const scaledHeight = loc.height * this.zoomFactor;
     
-    const touchX = (touch.clientX - rect.left) * canvasScaleX;
-    const touchY = (touch.clientY - rect.top) * canvasScaleY;
-    
-    // 初始化或更新上一個有效的觸控位置
-    if (this.lastValidTouchX === undefined) {
-        this.lastValidTouchX = touchX;
-        this.lastValidTouchY = touchY;
-    }
-    
-    if (this.target.following) {
-        // 檢查碰撞
-        if (this.isLineCollidingWithObstacle(
-            this.lastValidTouchX,
-            this.lastValidTouchY,
-            touchX,
-            touchY
-        )) {
-            console.log("觸控模式: 檢測到碰撞!");
-            
-            if (this.target.trail.length >= 5) {
-                const trailPoints = [];
-                for (let i = 0; i < 5; i++) {
-                    trailPoints.push(this.target.trail.pop()); // 移除並保存最後五個點
+                if (
+                    touchX >= scaledX &&
+                    touchX <= scaledX + scaledWidth &&
+                    touchY >= scaledY &&
+                    touchY <= scaledY + scaledHeight
+                ) {
+                    this.showDescription(loc.text, loc.description);
                 }
-                
-                const lastTrailPoint = trailPoints[trailPoints.length - 1];
-                this.target.x = lastTrailPoint.x;
-                this.target.y = lastTrailPoint.y;
-                
-                console.log("觸控模式: 退回到最近的五個點:", trailPoints);
-            }
-            
-            // 停止跟隨並更改目標顏色
-            this.target.following = false;
-            this.target.color = 'red';
-            return;
-        }
-
-        // 更新目標位置
-        this.target.x = touchX;
-        this.target.y = touchY;
-        
-        // 添加軌跡點
-        this.target.trail.push({
-            x: this.target.x,
-            y: this.target.y
+            });
         });
-        
-        // 限制軌跡長度
-        if (this.target.trail.length > 1000) {
-            this.target.trail.shift();
-        }
-        
-        // 更新上一個有效的觸控位置
-        this.lastValidTouchX = touchX;
-        this.lastValidTouchY = touchY;
-    } else {
+    }
+
+    handleTouchMove(touch) { 
+        const rect = this.canvas.getBoundingClientRect();
+        const canvasScaleX = this.canvas.width / rect.width;
+        const canvasScaleY = this.canvas.height / rect.height;
+    
+        const touchX = (touch.clientX - rect.left) * canvasScaleX;
+        const touchY = (touch.clientY - rect.top) * canvasScaleY;
+    
         // 計算移動距離
         const prevX = (this.touchStartX - rect.left) * canvasScaleX;
         const prevY = (this.touchStartY - rect.top) * canvasScaleY;
         const dx = touchX - prevX;
         const dy = touchY - prevY;
-        
+    
         // 更新偏移
         this.offsetX += dx;
         this.offsetY += dy;
-        
+    
         // 更新目標位置
         this.target.x += dx;
         this.target.y += dy;
-        
+    
         // 更新目標軌跡
         this.target.trail = this.target.trail.map(point => ({
             x: point.x + dx,
             y: point.y + dy
         }));
-        
+    
         // 更新終點位置
         this.endpoint.x += dx;
         this.endpoint.y += dy;
+    
+        // 更新觸控起始位置
+        this.touchStartX = touch.clientX;
+        this.touchStartY = touch.clientY;
     }
-
-    // 更新觸控起始位置
-    this.touchStartX = touch.clientX;
-    this.touchStartY = touch.clientY;
-}
 
     // 修改處理雙指縮放的方法
 handlePinchZoom(touches) {
