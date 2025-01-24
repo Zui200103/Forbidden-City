@@ -81,17 +81,25 @@ class MazeGame {
         this.bindTouchEvents();
         this.lastFollowingStopTime = 0; // 記錄最後一次停止跟隨的時間
         this.followingCooldown = 1000; // 冷卻時間（毫秒）
+
+        // 在觸摸開始時自動進入跟隨模式
+        //this.target.following = true;
+        //this.target.color = 'blue';
         
         // 目標物件
         this.target = {
             x: 80,
             y: 1130,
             radius: config.targetRadius,
-            color: 'red',
+            color: 'blue',
             borderColor: 'blue',
-            following: false,
+            following: true,
             trail: []
         };
+
+        // 添加搖桿狀態
+        this.joystickSpeed = 3; // 調整移動速度
+        this.bindJoystickEvents();    
 
         // 添加地點物件
         this.locations1 = [
@@ -187,7 +195,14 @@ class MazeGame {
                 width: 80, 
                 height: 17, 
                 text: "太和門", 
-                description: "太和門是故宮外朝三大殿的正南門，也是紫禁城內最大的宮門及正門，是自天安門南側向北進紫禁城時經過的第四道門（前三道依次為天安門、端門、午門）。太和門建成於明朝永樂十八年（1420年），初稱「奉天門」。明朝嘉靖三十七年六月辛卯重建改稱「大朝門」，嘉靖四十一年（1562年）改稱「皇極門」。清朝順治二年（1645年），改易宮殿名號，門隨大殿改稱為「太和門」。太和門是宮廷最高大的門座。由紫禁城正南的午門進來，首先看到的便是這座大門。太和門兩側各設旁門一座，與太和門平排並列，左邊的叫昭德門，右邊的叫貞度門。於明朝永樂十八年（1420年）建成，初稱「東角門」及「西角門」，嘉靖四十一年（1562年）改為「弘政門」及「宣治門」。現在的名號是在清朝順治二年（1645年）改稱的。明朝時，左邊昭德門為考選鴻臚之地。清朝兩門皆為侍衛值宿處。左右門體量比較矮小，屬於陪襯性的建築物。明朝時，太和門是「禦門聽政」之處，皇帝在太和門接受臣下朝拜及上奏，頒佈詔令，處理政事。清朝初年，皇帝也曾在太和門聽政、賜宴，後來「禦門聽政」改在乾清門進行。清朝順治元年九月（1644年），清朝統治者定鼎北京之後，首位皇帝順治帝在太和門頒佈大赦令。",
+                description: "太和門是紫禁城內最大的宮門，由紫禁城正南的午門進來，首先看到的便是這座大門。太和門的命名，是參照太和殿而來的。太和殿最初叫奉天殿，後來改稱皇極殿，最後才確定為太和殿。因此，太和門的名字，也是從最早明朝永樂十八年（1420年）的奉天門，嘉靖三十七年六月辛卯重建改稱「大朝門」，嘉靖四十一年（1562年）改稱「皇極門」。清朝順治二年（1645年），改易宮殿名號，門隨大殿改稱為「太和門」。\n\n"+
+"太和門面闊9間，進深4間，建築面積1371.14平方米。正中共開三門，上覆重簷歇山頂，下為漢白玉基座，梁枋等構件施以和璽彩畫。大門的前後石階各三個，左右石階各一個，建築通高23.8米。太和門前列有銅獅一對、銅鼎四隻，是鑄造於明朝的陳設銅器。太和門前的這對銅獅子十分高大，這樣的銅獅子在皇城內只有六對。\n\n"+
+"太和門兩側各設旁門一座，與太和門平排並列，左邊的叫昭德門，右邊的叫貞度門。於明朝永樂十八年（1420年）建成，初稱「東角門」及「西角門」，嘉靖四十一年（1562年）改為「弘政門」及「宣治門」。現在的名號是在清朝順治二年（1645年）改稱的。明朝時，左邊昭德門為考選鴻臚之地。清朝兩門皆為侍衛值宿處。左右門體量比較矮小，屬於陪襯性的建築物。\n\n"+
+"太和門前有面積約26000㎡的廣場，內金水河自西向東蜿蜒流過。河上橫架五座石橋，習稱內金水橋。廣場兩側是排列整齊的廊廡，習稱東、西朝房，並有協和門（明代稱會極門）和熙和門（明代稱歸極門）東西對峙。東側廊廡在明代用作實錄館、玉牒館和起居注館，清代改作稽察欽奉上諭事件處和內誥敕房。西側廊廡在明代為編修《大明會典》的會典館，清代改為繙書房和起居注館。\n\n"+
+"明朝時，太和門是「御門聽政」之處，皇帝在太和門接受臣下朝拜及上奏，頒佈詔令，處理政事。清朝初年，皇帝也曾在太和門聽政、賜宴，後來「御門聽政」改在乾清門進行。\n\n"+
+"御門聽政前，文武官各於左右掖門外序立等待。鐘鳴後門開，百官依次進入，過金水橋，至太和門（時稱皇極門）丹墀東西相向立，等候皇帝前來。皇帝入座後，鴻臚寺官員及文武百官全部入班，行一拜三叩禮，分班侍立。鴻臚寺官唱奏事。各衙門相繼奏事，禦史維持秩序。奏事畢，鳴鞭駕歸，百官以次出。明代的御門聽政，隆慶六年時定為每旬三次，逢三、六、九日為期。\n\n"+
+"清順治元年（1644年）九月，滿族統治者定鼎北京後，愛新覺羅•福臨在皇極門頒佈大赦令；十月初一，愛新覺羅•福臨在皇極門登基。\n\n"+
+"清光緒十四年，十二月十五日（1889年1月16日）深夜，貞度門守軍富山、雙奎兩人將洋油燈掛在簷柱上後睡了覺，時間久後，油燈點著了柱子而失火，雖然派出了7000多人次救火，但大火依然燒了兩天，太和門及其附屬建築盡毀。但下一個月，光緒十五年，正月二十七日（1889年2月26日），為光緒帝大婚的吉日。按照清朝禮儀，大婚時皇后須經太和門進宮。假若皇后從太和門的廢墟而入，那就太失皇家體面了。僅剩42天時間，重修太和門已來不及，清廷遂令北京的棚匠紮彩工，搭成一座彩棚太和門，以假亂真，連在宮延上經驗豐富的人都不能辨別真假。而且即使高達十丈，強大的風只能造成小搖小晃。於是大婚時，皇后也就穩穩當當地被抬進了紫禁城。",
                 color: "rgba(255, 165, 0, 1)"
             },{ 
                 x: 1064, 
@@ -1571,6 +1586,56 @@ handlePinchZoom(touches) {
         this.canvas.style.imageRendering = '-moz-crisp-edges';
         this.canvas.style.imageRendering = 'crisp-edges';
     }
+
+    // 添加新方法
+bindJoystickEvents() {
+    console.log("Binding joystick events", this.target);
+    window.addEventListener('joystickMove', (e) => {
+        console.log("Joystick move event:", {
+            detail: e.detail,
+            following: this.target.following
+        });
+
+        if (!this.target.following) {
+            console.log("Target not following, skipping joystick movement");
+            return;
+        }
+        
+        if (!this.target.following) return;
+        
+        const { x, y } = e.detail;
+        const speed = this.joystickSpeed;
+        
+        // 計算新位置
+        const newX = this.target.x + x * speed;
+        const newY = this.target.y + y * speed;
+        
+        // 檢查碰撞
+        if (!this.isLineCollidingWithObstacle(
+            this.target.x,
+            this.target.y,
+            newX,
+            newY
+        )) {
+            // 更新位置
+            this.target.x = newX;
+            this.target.y = newY;
+            
+            // 添加軌跡點
+            this.target.trail.push({
+                x: this.target.x,
+                y: this.target.y
+            });
+            
+            // 限制軌跡長度
+            if (this.target.trail.length > 1000) {
+                this.target.trail.shift();
+            }
+            // 檢查是否到達終點
+            this.checkEndpoint();            
+        }
+    });
+}
     
     loadMazeImage() {
         this.mazeImage = new Image();
