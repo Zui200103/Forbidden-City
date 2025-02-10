@@ -54,18 +54,25 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 </head>
-<body>
-    <div class="game-container">
-        <div class="instructions-panel">
-            <h2>目標：</h2>
+<div id="rules-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <h2>遊戲規則</h2>
+        <div class="rules">
+            <h3>目標：</h3>
             <p>讓紅色圓圈抵達終點</p>
             
             <h3>電腦版：</h3>
             <p>用滑鼠操控紅色圓圈移動</p>
-
+            
             <h3>手機版：</h3>
             <p>使用左下角虛擬搖桿控制紅色圓圈移動</p>
         </div>
+        <button id="close-rules-modal">確定</button>
+    </div>
+</div>
+<body>
+    <div class="game-container">
+        
         <canvas id="gameCanvas"></canvas>
         <div id="joystick-container"></div>
        
