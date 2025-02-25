@@ -95,7 +95,7 @@ class MazeGame {
         };
 
         // 添加搖桿狀態
-        this.joystickSpeed = 3; // 調整移動速度
+        this.joystickSpeed = 5; // 調整移動速度
         this.bindJoystickEvents();
 
         // 添加地點物件
@@ -1337,6 +1337,171 @@ class MazeGame {
         
         this.bindEvents();
         this.loadMazeImage();
+
+        function checkBoundaryAndCenter() {
+            // 獲取畫布可視區域的尺寸
+            const viewportWidth = this.canvas.width;
+            const viewportHeight = this.canvas.height;
+            
+            // 計算目標相對於畫布邊緣的距離百分比
+            const leftDistance = this.target.x;
+            const rightDistance = viewportWidth - this.target.x;
+            const topDistance = this.target.y;
+            const bottomDistance = viewportHeight - this.target.y;
+            
+            // 設定邊界閾值（接近邊緣多少開始移動畫面）
+            const boundaryThreshold = viewportWidth * 0.2; // 視窗寬度的20%
+            
+            // 檢查是否接近邊界並計算需要移動的距離
+            let moveX = 0;
+            let moveY = 0;
+            
+            if (leftDistance < boundaryThreshold) {
+                // 計算需要向右移動的距離，越接近邊緣移動越多
+                const ratio = 1 - (leftDistance / boundaryThreshold);
+                moveX = boundaryThreshold * ratio * 0.1; // 緩慢移動
+            } else if (rightDistance < boundaryThreshold) {
+                // 計算需要向左移動的距離
+                const ratio = 1 - (rightDistance / boundaryThreshold);
+                moveX = -boundaryThreshold * ratio * 0.1;
+            }
+            
+            if (topDistance < boundaryThreshold) {
+                // 計算需要向下移動的距離
+                const ratio = 1 - (topDistance / boundaryThreshold);
+                moveY = boundaryThreshold * ratio * 0.1;
+            } else if (bottomDistance < boundaryThreshold) {
+                // 計算需要向上移動的距離
+                const ratio = 1 - (bottomDistance / boundaryThreshold);
+                moveY = -boundaryThreshold * ratio * 0.1;
+            }
+            
+            // 如果需要移動，調整偏移量同時保持目標與畫面的相對位置
+            if (moveX !== 0 || moveY !== 0) {
+                // 移動畫面偏移
+                this.offsetX += moveX;
+                this.offsetY += moveY;
+                
+                // 同時移動目標位置保持相對位置不變
+                this.target.x += moveX;
+                this.target.y += moveY;
+                
+                // 更新目標軌跡
+                this.target.trail = this.target.trail.map(point => ({
+                    x: point.x + moveX,
+                    y: point.y + moveY
+                }));
+                
+                // 更新終點位置
+                this.endpoint.x += moveX;
+                this.endpoint.y += moveY;
+                
+                return true; // 返回true表示進行了邊界調整
+            }
+            
+            return false; // 返回false表示沒有進行邊界調整
+        }
+        
+        // 2. 新增WASD鍵盤控制畫面移動功能
+        function initKeyboardControls() {
+            
+            // 移動速度
+            const moveSpeed = 20;
+            
+            // 按鍵狀態
+            const keyState = {
+                w: false,
+                a: false,
+                s: false,
+                d: false
+            };
+            
+            // 監聽按鍵按下事件
+            window.addEventListener('keydown', (event) => {
+                const key = event.key.toLowerCase();
+                if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
+                    keyState[key] = true;
+                }
+            });
+            
+            // 監聽按鍵釋放事件
+            window.addEventListener('keyup', (event) => {
+                const key = event.key.toLowerCase();
+                if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
+                    keyState[key] = false;
+                }
+            });
+            
+            // 設定定時移動功能
+            const moveInterval = setInterval(() => {
+                // 檢查目標是否正在跟隨狀態
+                if (this.target.following) {
+                  return; // 如果目標正在跟隨狀態，直接返回
+                }
+              
+                let moveX = 0;
+                let moveY = 0;
+              
+                // 根據按鍵狀態計算移動方向
+                if (keyState.w) moveY += moveSpeed;
+                if (keyState.s) moveY -= moveSpeed;
+                if (keyState.a) moveX += moveSpeed;
+                if (keyState.d) moveX -= moveSpeed;
+              
+                // 如果有移動，進行畫面調整
+                if (moveX !== 0 || moveY !== 0) {
+                  // 更新偏移量
+                  this.offsetX += moveX;
+                  this.offsetY += moveY;
+              
+                  // 同時移動目標和相關元素以保持相對位置
+                  this.target.x += moveX;
+                  this.target.y += moveY;
+              
+                  // 更新目標軌跡
+                  this.target.trail = this.target.trail.map(point => ({
+                    x: point.x + moveX,
+                    y: point.y + moveY
+                  }));
+              
+                  // 更新終點位置
+                  this.endpoint.x += moveX;
+                  this.endpoint.y += moveY;
+                }
+              }, 30); // 約30fps的更新頻率
+            
+            // 將清除功能添加到遊戲實例中，以便在需要時清除
+            this.clearKeyboardControls = () => {
+                clearInterval(moveInterval);
+            };
+        }
+        
+        // 3. 整合到MazeGame類的constructor中
+        // 在你的constructor函式結尾前加入：
+        this.checkBoundaryAndCenter = checkBoundaryAndCenter.bind(this);
+        this.initKeyboardControls = initKeyboardControls.bind(this);
+        this.initKeyboardControls(); // 初始化鍵盤控制
+        
+        // 4. 在update或游戲循環中調用邊界檢查（假設你有一個update方法）
+        // 如果沒有update方法，則需要加入一個：
+        function update() {
+            // 只在移動端或觸控設備上檢查邊界
+            if ('ontouchstart' in window && this.target.following) {
+                this.checkBoundaryAndCenter();
+            }
+            
+            // 在此處添加其他更新邏輯...
+            
+            // 重繪遊戲界面
+            this.render();
+            
+            // 請求下一幀更新
+            requestAnimationFrame(this.update.bind(this));
+        }
+        
+        // 5. 在constructor中初始化update循環
+        this.update = update.bind(this);
+        requestAnimationFrame(this.update.bind(this));
     }
 
     showRulesModal() {
@@ -1620,46 +1785,127 @@ handlePinchZoom(touches) {
         this.canvas.style.imageRendering = 'crisp-edges';
     }
 
+    // 判斷特定座標是否為障礙物
+    isPointObstacle(x, y) {
+        if (!this.collisionMap) {
+            console.error("碰撞地圖未生成！");
+            return false;
+        }
+
+        // 將螢幕座標轉換為原始圖像座標
+        const adjustedX = Math.round((x - this.offsetX) / this.zoomFactor);
+        const adjustedY = Math.round((y - this.offsetY) / this.zoomFactor);
+
+        // 確保不超出地圖邊界
+        if (
+            adjustedX >= 0 && adjustedX < this.collisionMap[0].length &&
+            adjustedY >= 0 && adjustedY < this.collisionMap.length
+        ) {
+            return this.collisionMap[adjustedY][adjustedX] === 1;
+        }
+
+        // 如果超出邊界，視為障礙物
+        return true;
+    }
+
+    // 尋找可行的滑動方向
+    findSlidingPosition(currentX, currentY, targetX, targetY) {
+        // 如果可以直接移動，則返回目標位置
+        if (!this.isLineCollidingWithObstacle(currentX, currentY, targetX, targetY)) {
+            return { x: targetX, y: targetY };
+        }
+
+        // 嘗試水平移動
+        if (!this.isLineCollidingWithObstacle(currentX, currentY, targetX, currentY)) {
+            return { x: targetX, y: currentY };
+        }
+
+        // 嘗試垂直移動
+        if (!this.isLineCollidingWithObstacle(currentX, currentY, currentX, targetY)) {
+            return { x: currentX, y: targetY };
+        }
+
+        // 如果水平和垂直都不行，嘗試斜向移動
+        const dx = targetX - currentX;
+        const dy = targetY - currentY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < this.joystickSpeed / 2) {
+            return { x: currentX, y: currentY }; // 如果太近，保持原位
+        }
+
+        // 嘗試不同角度的移動
+        const angles = [45, 30, 60, 15, 75]; // 優先嘗試接近原方向的角度
+        for (const angle of angles) {
+            // 順時針嘗試
+            const cwRadians = (Math.atan2(dy, dx) + angle * Math.PI / 180) % (2 * Math.PI);
+            const cwX = currentX + Math.cos(cwRadians) * this.joystickSpeed;
+            const cwY = currentY + Math.sin(cwRadians) * this.joystickSpeed;
+            if (!this.isLineCollidingWithObstacle(currentX, currentY, cwX, cwY)) {
+                return { x: cwX, y: cwY };
+            }
+
+            // 逆時針嘗試
+            const ccwRadians = (Math.atan2(dy, dx) - angle * Math.PI / 180) % (2 * Math.PI);
+            const ccwX = currentX + Math.cos(ccwRadians) * this.joystickSpeed;
+            const ccwY = currentY + Math.sin(ccwRadians) * this.joystickSpeed;
+            if (!this.isLineCollidingWithObstacle(currentX, currentY, ccwX, ccwY)) {
+                return { x: ccwX, y: ccwY };
+            }
+        }
+
+        // 如果所有方向都無法移動，則保持原位
+        return { x: currentX, y: currentY };
+    }
+
     bindJoystickEvents() {
-        let isMoving = false; // 是否正在移動
-        let moveDirection = { x: 0, y: 0 }; // 移動方向
+        let isMoving = false;
+        let moveDirection = { x: 0, y: 0 };
+        let animationFrameId = null; // 追蹤動畫幀ID
     
-        // 動畫循環
         const moveTarget = () => {
-            if (!isMoving) return;
-    
-            // 計算新位置
-            const newX = this.target.x + moveDirection.x * this.joystickSpeed;
-            const newY = this.target.y + moveDirection.y * this.joystickSpeed;
-    
-            // 檢查碰撞
-            if (!this.isLineCollidingWithObstacle(
-                this.target.x,
-                this.target.y,
-                newX,
-                newY
-            )) {
-                // 更新位置
-                this.target.x = newX;
-                this.target.y = newY;
-    
-                // 添加軌跡點
-                this.target.trail.push({
-                    x: this.target.x,
-                    y: this.target.y
-                });
-    
-                // 限制軌跡長度
-                if (this.target.trail.length > 1000) {
-                    this.target.trail.shift();
+            if (!isMoving) {
+                // 如果不再移動，取消動畫循環
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
                 }
-    
-                // 檢查終點
-                this.checkEndpoint();
+                return;
             }
     
-            // 繼續動畫循環
-            requestAnimationFrame(moveTarget);
+            // 計算目標位置 - 確保速度一致
+            const speedFactor = this.joystickSpeed;
+            const targetX = this.target.x + moveDirection.x * speedFactor;
+            const targetY = this.target.y + moveDirection.y * speedFactor;
+    
+            // 使用滑動邏輯找出最佳移動位置
+            const newPosition = this.findSlidingPosition(
+                this.target.x,
+                this.target.y,
+                targetX,
+                targetY
+            );
+    
+            // 更新位置
+            this.target.x = newPosition.x;
+            this.target.y = newPosition.y;
+    
+            // 添加軌跡點
+            this.target.trail.push({
+                x: this.target.x,
+                y: this.target.y
+            });
+    
+            // 限制軌跡長度
+            if (this.target.trail.length > 1000) {
+                this.target.trail.shift();
+            }
+    
+            // 檢查終點
+            this.checkEndpoint();
+    
+            // 繼續動畫循環，確保只有一個循環在運行
+            animationFrameId = requestAnimationFrame(moveTarget);
         };
     
         // 監聽 joystickMove 事件
@@ -1670,27 +1916,50 @@ handlePinchZoom(touches) {
             this.target.color = 'blue';
             this.target.following = true;
     
-            // 更新移動方向
+            // 更新移動方向 - 確保方向向量的長度始終為1或更小
             const { x, y } = e.detail;
-            moveDirection.x = x;
-            moveDirection.y = y;
+            const magnitude = Math.sqrt(x * x + y * y);
+            
+            // 規範化向量，確保magnitude不超過1
+            if (magnitude > 1) {
+                moveDirection.x = x / magnitude;
+                moveDirection.y = y / magnitude;
+            } else {
+                moveDirection.x = x;
+                moveDirection.y = y;
+            }
     
-            // 啟動動畫循環
+            // 啟動動畫循環，確保只有一個循環在運行
             if (!isMoving) {
                 isMoving = true;
-                moveTarget();
+                // 取消之前的動畫循環（如果有）
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                }
+                animationFrameId = requestAnimationFrame(moveTarget);
             }
         });
     
         // 監聽 joystickEnd 事件
         window.addEventListener('joystickEnd', () => {
-            console.log("Joystick end event triggered"); // 添加這一行來測試
             // 停止移動
             isMoving = false;
+            
+            // 重置移動方向
+            moveDirection.x = 0;
+            moveDirection.y = 0;
+            
+            // 取消動畫循環
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            
             this.target.following = false;
             this.target.color = 'red';
         });
     }
+    
     loadMazeImage() {
         this.mazeImage = new Image();
         this.mazeImage.onload = () => {
