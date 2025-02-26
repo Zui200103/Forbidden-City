@@ -1404,77 +1404,140 @@ class MazeGame {
         
         // 2. 新增WASD鍵盤控制畫面移動功能
         function initKeyboardControls() {
-            
-            // 移動速度
-            const moveSpeed = 20;
-            
-            // 按鍵狀態
-            const keyState = {
-                w: false,
-                a: false,
-                s: false,
-                d: false
-            };
-            
-            // 監聽按鍵按下事件
-            window.addEventListener('keydown', (event) => {
-                const key = event.key.toLowerCase();
-                if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
-                    keyState[key] = true;
-                }
-            });
-            
-            // 監聽按鍵釋放事件
-            window.addEventListener('keyup', (event) => {
-                const key = event.key.toLowerCase();
-                if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
-                    keyState[key] = false;
-                }
-            });
-            
-            // 設定定時移動功能
-            const moveInterval = setInterval(() => {
-                // 檢查目標是否正在跟隨狀態
-                if (this.target.following) {
-                  return; // 如果目標正在跟隨狀態，直接返回
-                }
-              
-                let moveX = 0;
-                let moveY = 0;
-              
-                // 根據按鍵狀態計算移動方向
-                if (keyState.w) moveY += moveSpeed;
-                if (keyState.s) moveY -= moveSpeed;
-                if (keyState.a) moveX += moveSpeed;
-                if (keyState.d) moveX -= moveSpeed;
-              
-                // 如果有移動，進行畫面調整
-                if (moveX !== 0 || moveY !== 0) {
-                  // 更新偏移量
-                  this.offsetX += moveX;
-                  this.offsetY += moveY;
-              
-                  // 同時移動目標和相關元素以保持相對位置
-                  this.target.x += moveX;
-                  this.target.y += moveY;
-              
-                  // 更新目標軌跡
-                  this.target.trail = this.target.trail.map(point => ({
-                    x: point.x + moveX,
-                    y: point.y + moveY
-                  }));
-              
-                  // 更新終點位置
-                  this.endpoint.x += moveX;
-                  this.endpoint.y += moveY;
-                }
-              }, 30); // 約30fps的更新頻率
-            
-            // 將清除功能添加到遊戲實例中，以便在需要時清除
-            this.clearKeyboardControls = () => {
-                clearInterval(moveInterval);
-            };
+    // 移動速度
+    const moveSpeed = 20; // 畫面移動速度
+    const targetSpeed = 5; // 目標移動速度
+    
+    // 按鍵狀態
+    const keyState = {
+        // WASD - 目標移動
+        w: false,
+        a: false,
+        s: false,
+        d: false,
+        // 方向鍵 - 畫面移動
+        ArrowUp: false,
+        ArrowDown: false,
+        ArrowLeft: false,
+        ArrowRight: false
+    };
+    
+    // 監聽按鍵按下事件
+    window.addEventListener('keydown', (event) => {
+        const key = event.key;
+        if (key in keyState) {
+            keyState[key] = true;
+            // 防止方向鍵滾動頁面
+            if (key.startsWith('Arrow')) {
+                event.preventDefault();
+            }
         }
+    });
+    
+    // 監聽按鍵釋放事件
+    window.addEventListener('keyup', (event) => {
+        const key = event.key;
+        if (key in keyState) {
+            keyState[key] = false;
+        }
+    });
+    
+    // 設定定時移動功能
+    const moveInterval = setInterval(() => {
+        // 1. 畫面移動 (方向鍵)
+        let moveX = 0;
+        let moveY = 0;
+        
+        // 根據方向鍵狀態計算畫面移動方向
+        if (keyState.ArrowUp) moveY += moveSpeed;
+        if (keyState.ArrowDown) moveY -= moveSpeed;
+        if (keyState.ArrowLeft) moveX += moveSpeed;
+        if (keyState.ArrowRight) moveX -= moveSpeed;
+        
+        // 如果有畫面移動，進行畫面調整
+        if (moveX !== 0 || moveY !== 0) {
+            // 更新偏移量
+            this.offsetX += moveX;
+            this.offsetY += moveY;
+            
+            // 同時移動目標和相關元素以保持相對位置
+            this.target.x += moveX;
+            this.target.y += moveY;
+            
+            // 更新目標軌跡
+            this.target.trail = this.target.trail.map(point => ({
+                x: point.x + moveX,
+                y: point.y + moveY
+            }));
+            
+            // 更新終點位置
+            this.endpoint.x += moveX;
+            this.endpoint.y += moveY;
+        }
+        
+        // 2. 目標移動 (WASD)
+        if (this.hasReachedEnd) return; // 如果已到達終點，不移動目標
+        
+        let targetMoveX = 0;
+        let targetMoveY = 0;
+        
+        // 根據WASD按鍵狀態計算目標移動方向
+        if (keyState.w) targetMoveY -= targetSpeed;
+        if (keyState.s) targetMoveY += targetSpeed;
+        if (keyState.a) targetMoveX -= targetSpeed;
+        if (keyState.d) targetMoveX += targetSpeed;
+        
+        // 如果有目標移動
+        if (targetMoveX !== 0 || targetMoveY !== 0) {
+            // 計算新位置
+            const targetX = this.target.x + targetMoveX;
+            const targetY = this.target.y + targetMoveY;
+            
+            // 如果目標不在跟隨狀態，激活跟隨狀態
+            if (!this.target.following) {
+                this.target.following = true;
+                this.target.color = 'blue';
+                this.target.trail = [{ x: this.target.x, y: this.target.y }];
+            }
+            
+            // 使用滑動邏輯找出最佳移動位置（避開障礙物）
+            const newPosition = this.findSlidingPosition(
+                this.target.x,
+                this.target.y,
+                targetX,
+                targetY
+            );
+            
+            // 更新目標位置
+            this.target.x = newPosition.x;
+            this.target.y = newPosition.y;
+            
+            // 添加軌跡點
+            this.target.trail.push({
+                x: this.target.x,
+                y: this.target.y
+            });
+            
+            // 限制軌跡長度
+            if (this.target.trail.length > 1000) {
+                this.target.trail.shift();
+            }
+            
+            // 檢查終點
+            this.checkEndpoint();
+        } else if (this.target.following) {
+            // 如果沒有按下WASD，且目標在跟隨狀態，取消跟隨狀態
+            this.target.following = false;
+            this.target.color = 'red';
+            this.lastFollowingStopTime = Date.now();
+        }
+    }, 30); // 約30fps的更新頻率
+    
+    // 將清除功能添加到遊戲實例中，以便在需要時清除
+    this.clearKeyboardControls = () => {
+        clearInterval(moveInterval);
+    };
+}
         
         // 3. 整合到MazeGame類的constructor中
         // 在你的constructor函式結尾前加入：
