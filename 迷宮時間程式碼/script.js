@@ -4,7 +4,7 @@ const config = {
     minZoom: 0.1,
     maxZoom: 50,
     targetRadius: 2,
-    trailOpacity: 0.5,
+    trailOpacity: 0.8,
     zoomSpeed: 0.1
 };
 
@@ -67,8 +67,8 @@ class MazeGame {
             originalX: 1445,
             originalY: 1134,
             radius: 15,
-            x: 100,  // 這將被動態更新
-            y: 1130,  // 這將被動態更新
+            x: 1445,  // 這將被動態更新
+            y: 1134,  // 這將被動態更新
         };
         this.hasReachedEnd = false;
         this.fadeAlpha = 0;
@@ -1519,17 +1519,16 @@ class MazeGame {
                     });
                     
                     // 限制軌跡長度
-                    if (this.target.trail.length > 1000) {
+                    if (this.target.trail.length > 1000000) {
                         this.target.trail.shift();
                     }
                     
                     // 檢查終點
                     this.checkEndpoint();
                 } else if (this.target.following) {
-                    // 如果沒有按下WASD，且目標在跟隨狀態，取消跟隨狀態
-                    this.target.following = false;
+                    
                     this.target.color = 'red';
-                    this.lastFollowingStopTime = Date.now();
+                   
                 }
             }, 30); // 約30fps的更新頻率
             
@@ -1960,7 +1959,7 @@ handlePinchZoom(touches) {
             });
     
             // 限制軌跡長度
-            if (this.target.trail.length > 1000) {
+            if (this.target.trail.length > 1000000) {
                 this.target.trail.shift();
             }
     
@@ -2184,6 +2183,8 @@ hideDescription() {
         );
     }
 
+    
+
     handleMouseMove(event) {
         const rect = this.canvas.getBoundingClientRect();
         const canvasScaleX = this.canvas.width / rect.width;
@@ -2225,7 +2226,6 @@ hideDescription() {
         }
 
         if (this.isDragging) {
-            if (!this.target.following) {
                 const dx = ((event.clientX - this.lastMouseX) * canvasScaleX);
                 const dy = ((event.clientY - this.lastMouseY) * canvasScaleY);
     
@@ -2241,7 +2241,7 @@ hideDescription() {
                 // 更新終點位置
                 this.endpoint.x += dx;
                 this.endpoint.y += dy;
-            }
+            
             this.lastMouseX = event.clientX;
             this.lastMouseY = event.clientY;
         } 
@@ -2296,7 +2296,7 @@ hideDescription() {
             });
 
             // 限制軌跡長度
-            if (this.target.trail.length > 1000) {
+            if (this.target.trail.length > 1000000) {
                 this.target.trail.shift();
             }
 
@@ -2447,8 +2447,7 @@ hideDescription() {
     handleWheel(event) {
         event.preventDefault();
         
-        if (this.target.following) return;
-
+        
         const { clientX: mouseX, clientY: mouseY, deltaY } = event;
         const zoomDirection = deltaY < 0 ? 1 : -1;
         const zoomFactor = 1 + zoomDirection * config.zoomSpeed;
@@ -2839,7 +2838,7 @@ hideDescription() {
         // 繪製軌跡
         if (this.target.trail.length > 1) {
             this.ctx.strokeStyle = `rgba(255, 0, 0, ${config.trailOpacity})`;
-            this.ctx.lineWidth = 5; // 設定軌跡的粗細
+            this.ctx.lineWidth = 10; // 設定軌跡的粗細
             this.ctx.beginPath();
             this.ctx.moveTo(this.target.trail[0].x, this.target.trail[0].y);
             this.target.trail.forEach(point => {
