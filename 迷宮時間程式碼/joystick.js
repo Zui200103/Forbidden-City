@@ -13,27 +13,27 @@ const VirtualJoystick = () => {
   
   // 新增一個狀態來控制是否處於編輯模式
   const [isEditing, setIsEditing] = React.useState(false);
+
+    // 檢測是否為移動設備
+    const [isMobileDevice, setIsMobileDevice] = React.useState(false);
   
-  // 檢測是否為移動設備
-  const [isMobileDevice, setIsMobileDevice] = React.useState(false);
-  
-  // 在組件掛載時檢測設備類型
-  React.useEffect(() => {
-    const checkMobile = () => {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-             (window.matchMedia && window.matchMedia('(max-width: 767px)').matches);
-    };
-    
-    setIsMobileDevice(checkMobile());
-    
-    // 監聽視窗大小變化以更新設備類型
-    const handleResize = () => {
+    // 在組件掛載時檢測設備類型
+    React.useEffect(() => {
+      const checkMobile = () => {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+               (window.matchMedia && window.matchMedia('(max-width: 767px)').matches);
+      };
+      
       setIsMobileDevice(checkMobile());
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+      
+      // 監聽視窗大小變化以更新設備類型
+      const handleResize = () => {
+        setIsMobileDevice(checkMobile());
+      };
+      
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
   
   const joystickSize = 100;
   const handleSize = 40;
@@ -137,143 +137,101 @@ const VirtualJoystick = () => {
     localStorage.setItem('joystickPosition', JSON.stringify(positionStyle));
   };
   
-  // 切換編輯模式 - 確保這是一個正確的處理函數
-  const toggleEditMode = (e) => {
-    e.preventDefault(); // 阻止默認行為
-    e.stopPropagation(); // 阻止事件冒泡
-    console.log("Toggle edit mode clicked, current state:", isEditing);
+  // 切換編輯模式
+  const toggleEditMode = () => {
     setIsEditing(!isEditing);
   };
 
-  // 只有在移動設備上並且不在編輯模式時才渲染搖桿
-  const renderJoystick = () => {
-    if (!isMobileDevice && !isEditing) return null;
-    
-    return React.createElement(
-      'div',
-      {
-        style: {
-          position: 'fixed',
-          bottom: joystickPosition.bottom,
-          left: joystickPosition.left,
-          touchAction: 'none',
-          transition: isEditing ? 'none' : 'all 0.3s ease',
-          zIndex: 1000,
-          display: (isMobileDevice || isEditing) ? 'block' : 'none'
-        },
-      },
-      [
-        // 搖桿本體
-        React.createElement(
-          'div',
-          {
-            key: 'joystick',
-            style: {
-              position: 'relative',
-              width: joystickSize + 'px',
-              height: joystickSize + 'px',
-              borderRadius: '50%',
-              backgroundColor: isEditing ? 'rgba(0, 100, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)',
-              backdropFilter: 'blur(4px)',
-              border: isEditing ? '2px dashed #0088ff' : 'none',
-            },
-            onTouchStart: isEditing ? handleJoystickDrag : handleTouchStart,
-            onTouchMove: isEditing ? handleJoystickDrag : handleTouchMove,
-            onTouchEnd: handleTouchEnd,
-          },
-          React.createElement('div', {
-            style: {
-              position: 'absolute',
-              width: handleSize + 'px',
-              height: handleSize + 'px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-              left: '50%',
-              top: '50%',
-              transform: `translate(calc(-50% + ${joystickPos.x}px), calc(-50% + ${joystickPos.y}px))`,
-              transition: 'transform 0.075s',
-            },
-          })
-        ),
-        
-        // 編輯模式提示
-        isEditing && React.createElement(
-          'div',
-          {
-            key: 'edit-message',
-            style: {
-              position: 'absolute',
-              top: '-60px',
-              left: '0',
-              width: '120px',
-              padding: '5px',
-              background: 'rgba(0, 0, 0, 0.7)',
-              color: 'white',
-              borderRadius: '4px',
-              fontSize: '12px',
-              textAlign: 'center',
-            }
-          },
-          '拖動搖桿到你喜歡的位置'
-        )
-      ]
-    );
-  };
-  
-  // 添加滑鼠事件支援
-  const handleButtonClick = (e) => {
-    console.log("Button clicked");
-    toggleEditMode(e);
-  };
-  
-  // 渲染編輯按鈕（固定在左上角）
-  const renderEditButton = () => {
-    // 只在移動設備上或編輯模式顯示編輯按鈕
-    if (!isMobileDevice && !isEditing) return null;
-    
-    return React.createElement(
-      'button',
-      {
-        onClick: handleButtonClick, // 使用新的處理函數
-        onTouchStart: (e) => {
-          e.preventDefault();
-          handleButtonClick(e);
-        },
-        style: {
-          position: 'fixed',
-          top: '10px',
-          left: '10px',
-          padding: '8px',
-          background: isEditing ? '#ff3333' : '#0088ff',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          fontSize: '12px',
-          cursor: 'pointer',
-          zIndex: 1001,
-          width: '40px',
-          height: '40px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          userSelect: 'none', // 防止文字被選中
-          touchAction: 'manipulation', // 優化觸控行為
-        }
-      },
-      isEditing ? '完成' : '調整'
-    );
-  };
+  if (!isMobileDevice && !isEditing) return null;
 
-  // 為移動設備渲染搖桿和編輯按鈕
-  // 為桌面設備僅在編輯模式下渲染
   return React.createElement(
-    React.Fragment,
-    null,
+    'div',
+    {
+      style: {
+        position: 'fixed',
+        bottom: joystickPosition.bottom,
+        left: joystickPosition.left,
+        touchAction: 'none',
+        transition: isEditing ? 'none' : 'all 0.3s ease',
+      },
+    },
     [
-      // 使用陣列確保兩個元素都能被正確渲染
-      renderEditButton(),
-      renderJoystick()
+      // 搖桿本體
+      React.createElement(
+        'div',
+        {
+          key: 'joystick',
+          style: {
+            position: 'relative',
+            width: joystickSize + 'px',
+            height: joystickSize + 'px',
+            borderRadius: '50%',
+            backgroundColor: isEditing ? 'rgba(0, 100, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)',
+            backdropFilter: 'blur(4px)',
+            border: isEditing ? '2px dashed #0088ff' : 'none',
+          },
+          onTouchStart: isEditing ? handleJoystickDrag : handleTouchStart,
+          onTouchMove: isEditing ? handleJoystickDrag : handleTouchMove,
+          onTouchEnd: handleTouchEnd,
+        },
+        React.createElement('div', {
+          style: {
+            position: 'absolute',
+            width: handleSize + 'px',
+            height: handleSize + 'px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+            left: '50%',
+            top: '50%',
+            transform: `translate(calc(-50% + ${joystickPos.x}px), calc(-50% + ${joystickPos.y}px))`,
+            transition: 'transform 0.075s',
+          },
+        })
+      ),
+      
+      // 編輯按鈕
+      React.createElement(
+        'button',
+        {
+          key: 'edit-button',
+          onClick: toggleEditMode,
+          style: {
+            position: 'absolute',
+            down: '-30px',
+            right: '0',
+            padding: '5px',
+            background: isEditing ? '#ff3333' : '#0088ff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            fontSize: '12px',
+            cursor: 'pointer',
+          }
+        },
+        isEditing ? '完成' : '調整'
+      ),
+      
+      // 顯示編輯模式提示
+      isEditing && React.createElement(
+        'div',
+        {
+          key: 'edit-message',
+          style: {
+            position: 'absolute',
+            top: '-60px',
+            right: '0',
+            width: '120px',
+            padding: '5px',
+            background: 'rgba(0, 0, 0, 0.7)',
+            color: 'white',
+            borderRadius: '4px',
+            fontSize: '12px',
+            textAlign: 'center',
+          }
+        },
+        '拖動搖桿位置'
+      )
     ]
   );
 };
